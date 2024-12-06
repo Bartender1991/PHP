@@ -1,0 +1,10 @@
+Estos comandos se deben de copiar y pegar en la consola de la pag que se quiera descargar las imágenes, no importa si son por js, solo que si son por js se debe tener en cuenta que se dben de cargar todas para que las vea. 
+
+
+const images = document.querySelectorAll('img');
+
+const imageSources = Array.from(images).map(img => img.src);
+
+console.log('Imágenes encontradas:', imageSources);
+
+copy(imageSources);
