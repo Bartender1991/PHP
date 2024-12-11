@@ -1,92 +1,82 @@
 <?php
-// Configuración inicial
-// La ruta se tomará del formulario, por lo que no es necesario definirla aquí inicialmente
-// El archivo 'links.json' debe estar presente con las URLs de las imágenes a descargar
+// Mantener el script ejecutándose durante la descarga
+set_time_limit(0);
 
-// Verificar si los datos se enviaron por POST
+// Verificar si los datos se enviaron por método POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Leer los datos enviados desde el formulario
-    $ruta = $_POST['ruta'] ?? ''; // Ruta seleccionada
-    $contenido = $_POST['contenido'] ?? ''; // Texto del textarea (URLs)
+    // Obtener los datos enviados por el cliente
+    $ruta = $_POST['ruta'] ?? ''; // Ruta de destino para las descargas
+    $contenido = $_POST['contenido'] ?? ''; // Lista de URLs a descargar
 
-    // Validar que se haya proporcionado una ruta y contenido
-    if (empty($ruta)) {
-        die("Por favor, selecciona una carpeta.");
+    // Validar que se hayan proporcionado datos válidos
+    if (empty($ruta) || empty($contenido)) {
+        echo json_encode(['success' => false, 'message' => 'Faltan datos necesarios.']);
+        exit; // Finalizar ejecución si faltan datos
     }
 
-    if (empty($contenido)) {
-        die("Por favor, ingresa contenido en el textarea.");
-    }
+    // Procesar las URLs recibidas
+    $urls = json_decode($contenido, true) ?: array_filter(array_map('trim', explode("\n", $contenido)));
 
-    // Verificar si el contenido es un JSON válido
-    $urls = json_decode($contenido, true); // Intentamos convertir el contenido a JSON
-
-    if (json_last_error() === JSON_ERROR_NONE) {
-        // Si es un JSON válido, lo usamos directamente
-        $urls = array_map('trim', $urls); // Limpiamos los valores del array
-    } else {
-        // Si no es un JSON válido, lo tratamos como texto
-        $urls = array_filter(array_map('trim', explode("\n", $contenido)));
-    }
-
-    // Verificar que se hayan obtenido URLs válidas
+    // Verificar si la lista de URLs es válida y contiene al menos una URL
     if (empty($urls)) {
-        die("No se encontraron URLs válidas en el contenido.");
+        echo json_encode(['success' => false, 'message' => 'No se encontraron URLs válidas.']);
+        exit; // Finalizar ejecución si no hay URLs válidas
     }
 
-    // Verificar si el directorio destino existe, si no, crearlo
+    // Crear la carpeta de destino si no existe
     if (!file_exists($ruta)) {
-        mkdir($ruta, 0777, true); // Crear el directorio con permisos
+        mkdir($ruta, 0777, true); // Crear carpeta con permisos adecuados
     }
 
-    // Función para verificar si un archivo ya existe y generar un nombre único
-    function obtenerNombreUnico($nombreArchivo, $directorioDestino) {
-        $rutaCompleta = $directorioDestino . DIRECTORY_SEPARATOR . $nombreArchivo;
-        $contador = 1;
+    // Variables para el progreso
+    $total = count($urls); // Total de URLs a descargar
+    $descargadas = 0; // Contador de descargas realizadas
+    $inicio = microtime(true); // Tiempo de inicio para medir el progreso
 
-        // Si el archivo ya existe, agregar un número al nombre
-        while (file_exists($rutaCompleta)) {
-            $nombreArchivoSinExt = pathinfo($nombreArchivo, PATHINFO_FILENAME);
-            $extension = pathinfo($nombreArchivo, PATHINFO_EXTENSION);
-            $nombreArchivo = $nombreArchivoSinExt . "_" . $contador . "." . $extension;
-            $rutaCompleta = $directorioDestino . DIRECTORY_SEPARATOR . $nombreArchivo;
-            $contador++;
-        }
-
-        return $nombreArchivo;
-    }
-
-    // Función para descargar y guardar la imagen
-    function descargarImagen($url, $directorioDestino) {
-        // Obtener el contenido de la imagen
-        $imagen = @file_get_contents($url);
-        if ($imagen === false) {
-            echo "Error al descargar la imagen: $url<br>";
-            return;
-        }
-
-        // Obtener el nombre de la imagen desde la URL
-        $nombreArchivo = basename($url);
-
-        // Obtener un nombre único para el archivo
-        $nombreArchivoUnico = obtenerNombreUnico($nombreArchivo, $directorioDestino);
-
-        // Ruta completa del archivo
-        $rutaCompleta = $directorioDestino . DIRECTORY_SEPARATOR . $nombreArchivoUnico;
-
-        // Guardar la imagen en el directorio
-        file_put_contents($rutaCompleta, $imagen);
-        echo "Imagen descargada: $nombreArchivoUnico<br>";
-    }
-
-    // Descargar todas las imágenes
+    // Procesar cada URL
     foreach ($urls as $url) {
-        descargarImagen($url, $ruta);
+        $descargadas++; // Incrementar el contador de descargas
+        descargarImagen($url, $ruta); // Descargar la imagen
+
+        // Calcular el tiempo transcurrido y estimado restante
+        $tiempoTranscurrido = microtime(true) - $inicio;
+        $estimadoRestante = $tiempoTranscurrido / $descargadas * ($total - $descargadas);
+
+        // Enviar el progreso al cliente
+        echo json_encode([
+            'success' => true,
+            'progreso' => $descargadas,
+            'total' => $total,
+            'tiempoTranscurrido' => round($tiempoTranscurrido, 2), // Redondear a 2 decimales
+            'estimadoRestante' => round($estimadoRestante, 2) // Redondear a 2 decimales
+        ]);
+
+        // Enviar la salida al cliente de inmediato
+        flush();
+        ob_flush();
+
+        // Simular un retardo (puedes eliminar esta línea en producción)
+        usleep(500000); // Pausar 0.5 segundos para pruebas
     }
 
-    echo "¡Todas las imágenes han sido descargadas!";
-} else {
-    // Si no se envió POST, mostrar un mensaje de error
-    echo "No se recibieron datos del formulario.";
+    // Enviar mensaje de finalización
+    echo json_encode(['success' => true, 'message' => 'Descarga completa.']);
+    exit; // Finalizar la ejecución
+}
+
+/**
+ * Descargar una imagen desde una URL y guardarla en un directorio especificado.
+ * 
+ * @param string $url URL de la imagen a descargar
+ * @param string $directorioDestino Ruta del directorio donde se guardará la imagen
+ */
+function descargarImagen($url, $directorioDestino) {
+    $imagen = @file_get_contents($url); // Obtener el contenido de la imagen desde la URL
+    if ($imagen === false) return; // Si falla, no hacer nada
+
+    $nombreArchivo = basename($url); // Obtener el nombre del archivo desde la URL
+    $rutaCompleta = $directorioDestino . DIRECTORY_SEPARATOR . $nombreArchivo; // Ruta completa del archivo
+
+    file_put_contents($rutaCompleta, $imagen); // Guardar la imagen en el directorio
 }
 ?>
