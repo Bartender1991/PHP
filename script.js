@@ -103,6 +103,13 @@ document.getElementById('formRuta').addEventListener('submit', function (event) 
 
     let cancelado = false; // Bandera para controlar si la descarga fue cancelada
 
+    // Función para limpiar los campos del modal
+    function limpiarModal() {
+        rruta.textContent = "";
+        progresoTexto.textContent = "Preparando descargas...";
+        tiempoTexto.textContent = "";
+    }
+
     // Mostrar el modal al iniciar el proceso
     modal.style.display = 'block';
 
@@ -111,6 +118,7 @@ document.getElementById('formRuta').addEventListener('submit', function (event) 
         cancelado = true; // Actualizar la bandera
         mostrarMensaje('Descarga cancelada.'); // Mostrar mensaje al usuario
         modal.style.display = 'none'; // Ocultar el modal
+        limpiarModal(); // Limpiar los datos del modal
     });
 
     // Enviar los datos al servidor usando fetch
@@ -131,6 +139,7 @@ document.getElementById('formRuta').addEventListener('submit', function (event) 
                     if (done) {
                         // Cuando el proceso termina, ocultar el modal y notificar al usuario
                         modal.style.display = 'none';
+                        limpiarModal(); // Limpiar los datos del modal
                         mostrarMensaje('Proceso finalizado.');
                         return;
                     }
@@ -165,5 +174,6 @@ document.getElementById('formRuta').addEventListener('submit', function (event) 
             console.error('Error:', error);
             mostrarMensaje('Hubo un error al enviar el formulario.');
             modal.style.display = 'none'; // Ocultar el modal en caso de error
+            limpiarModal(); // Limpiar los datos del modal
         });
 });
