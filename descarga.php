@@ -61,6 +61,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Enviar mensaje de finalización
     echo json_encode(['success' => true, 'message' => 'Descarga completa.']);
+    // Enviar la salida al cliente de inmediato
+    flush();
+    ob_flush();
     exit; // Finalizar la ejecución
 }
 
@@ -70,7 +73,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
  * @param string $url URL de la imagen a descargar
  * @param string $directorioDestino Ruta del directorio donde se guardará la imagen
  */
-function descargarImagen($url, $directorioDestino) {
+function descargarImagen($url, $directorioDestino)
+{
     $imagen = @file_get_contents($url); // Obtener el contenido de la imagen desde la URL
     if ($imagen === false) return; // Si falla, no hacer nada
 
@@ -79,4 +83,3 @@ function descargarImagen($url, $directorioDestino) {
 
     file_put_contents($rutaCompleta, $imagen); // Guardar la imagen en el directorio
 }
-?>

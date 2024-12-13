@@ -4,57 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor de Rutas</title>
-    <style>
-        /* Estilos básicos para el formulario y los botones */
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-
-        .container {
-            max-width: 1600px;
-            margin: 0 auto;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-        }
-
-        input[type="text"],
-        textarea {
-            width: 100%;
-            /* Hacer que los campos ocupen todo el ancho disponible */
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            /* Borde gris claro */
-            border-radius: 10px;
-            /* Bordes redondeados */
-        }
-
-        button {
-            padding: 10px 15px;
-            /* Espaciado interno */
-            background-color: #007BFF;
-            /* Azul */
-            color: white;
-            /* Texto en blanco */
-            border: none;
-            /* Sin borde */
-            border-radius: 5px;
-            /* Bordes redondeados */
-            cursor: pointer;
-            /* Cambia el cursor al pasar sobre el botón */
-        }
-
-        button:hover {
-            background-color: #0056b3;
-            /* Azul más oscuro al pasar el ratón */
-        }
-    </style>
+    <title>Gestor de Descargas por JSON</title>
+    <!-- Enlace a la hoja de estilos -->
+    <link rel="stylesheet" href="estilo.css">
 </head>
 
 <body>
@@ -75,18 +27,25 @@
 
             <!-- Botón de enviar formulario -->
             <button type="submit" id="submitBtn">Enviar</button>
+            <button id="Limpiar">Limpiar</button>
         </form>
     </div>
+
+
     <div id="modalProgreso"
         style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 1000;">
         <div
             style="margin: 10% auto; padding: 20px; background: white; width: 50%; text-align: center; border-radius: 10px;">
             <h2>Descargando imágenes</h2>
+            <p id="idruta"></p>
             <p id="progresoTexto">Preparando descargas...</p>
             <p id="tiempoTexto"></p>
             <button id="cancelarDescarga">Cancelar</button>
         </div>
     </div>
+
+    <div class="message-container" id="messageContainer"></div>
+
 
     <script src="script.js"></script>
 </body>

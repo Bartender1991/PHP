@@ -1,0 +1,84 @@
+/* Estilos básicos para el formulario y los botones */
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+
+.container {
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+input[type="text"],
+textarea {
+    width: 100%;
+    /* Hacer que los campos ocupen todo el ancho disponible */
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    /* Borde gris claro */
+    border-radius: 10px;
+    /* Bordes redondeados */
+}
+
+button {
+    padding: 10px 15px;
+    /* Espaciado interno */
+    background-color: #4800ffbc;
+    /* Azul */
+    color: white;
+    /* Texto en blanco */
+    border: none;
+    /* Sin borde */
+    border-radius: 5px;
+    /* Bordes redondeados */
+    cursor: pointer;
+    /* Cambia el cursor al pasar sobre el botón */
+}
+
+button:hover {
+    background-color: #0057b378;
+    /* Azul más oscuro al pasar el ratón */
+}
+
+/* Contenedor general de los mensajes */
+.message-container {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Estilo del mensaje */
+.message {
+    background-color: #68efe832;
+    color: #000000;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgb(0, 0, 0);
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+/* Mostrar mensaje */
+.message.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Ocultar mensaje */
+.message.hide {
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}

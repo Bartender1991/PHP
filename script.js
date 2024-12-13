@@ -1,35 +1,86 @@
 // Función que realiza la solicitud fetch y actualiza el campo de texto
 function seleccionarCarpeta(boton, campoTexto) {
     boton.addEventListener('click', () => {
+        //mostrarMensaje(campoTexto.value);
+
+        // Obtenemos el valor del campo de texto
+        const rutaActual = campoTexto.value;
+
         // Realiza la solicitud al script PHP
-        fetch('abrirNavegador.php')
+        fetch('abrirNavegador.php', {
+            method: 'POST', // Usamos POST para enviar datos
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded', // Indicamos el tipo de contenido
+            },
+            body: new URLSearchParams({
+                ruta: rutaActual, // Enviamos el valor del campo de texto como parámetro
+            })
+        })
             .then(response => response.json()) // Convierte la respuesta a JSON
             .then(data => {
                 if (data.success) {
                     // Actualiza el valor del campo de texto con la ruta seleccionada
                     campoTexto.value = data.path;
-                    alert('Ruta seleccionada: ' + data.path);
+                    mostrarMensaje('Ruta seleccionada: ' + data.path);
                 } else {
                     // Mensaje si el usuario cancela o hay un error en PHP
-                    alert(data.message || 'No se pudo seleccionar la carpeta.');
+                    mostrarMensaje(data.message || 'No se pudo seleccionar la carpeta.');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Hubo un error inesperado al seleccionar la carpeta.');
+                mostrarMensaje('Hubo un error inesperado al seleccionar la carpeta.');
             });
+    });
+}
+
+
+// Función que asigna la funcionalidad de limpiar el área de texto
+function limpiarContenido(boton, textarea) {
+    boton.addEventListener('click', (event) => {
+        event.preventDefault(); // Prevenir el comportamiento predeterminado
+        textarea.value = ""; // Limpiar el contenido del área de texto
+        mostrarMensaje('Se limpio contenido');
     });
 }
 
 // Espera a que el DOM esté completamente cargado
 document.addEventListener('DOMContentLoaded', () => {
+    mostrarMensaje('esto es un mensaje');
     // Obtiene las referencias del formulario
     const botonSeleccionar = document.getElementById('seleccionarCarpeta');
     const campoRuta = document.getElementById('ruta');
+    const btnLimpiar = document.getElementById('Limpiar');
+    const textareaContenido = document.getElementById('contenido');
 
     // Llama a la función para asignar la funcionalidad al botón
     seleccionarCarpeta(botonSeleccionar, campoRuta);
+
+    // Llama a la función para asignar la funcionalidad de limpiar
+    limpiarContenido(btnLimpiar, textareaContenido);
 });
+
+// Función para mostrar un mensaje
+function mostrarMensaje(texto, tipo = 'info', duracion = 3000) {
+    const container = document.getElementById('messageContainer');
+
+    // Crear un nuevo elemento para el mensaje
+    const mensaje = document.createElement('div');
+    mensaje.className = `message ${tipo}`;
+    mensaje.textContent = texto;
+
+    // Agregar el mensaje al contenedor
+    container.appendChild(mensaje);
+
+    // Mostrar el mensaje con la clase 'show'
+    setTimeout(() => mensaje.classList.add('show'), 100);
+
+    // Ocultar y eliminar el mensaje después de la duración especificada
+    setTimeout(() => {
+        mensaje.classList.add('hide');
+        mensaje.addEventListener('transitionend', () => mensaje.remove());
+    }, duracion);
+}
 
 document.getElementById('formRuta').addEventListener('submit', function (event) {
     event.preventDefault(); // Evitar que el formulario se envíe de forma tradicional
@@ -44,6 +95,7 @@ document.getElementById('formRuta').addEventListener('submit', function (event) 
     formData.append('contenido', contenido);
 
     // Referencias al modal y sus elementos
+    const rruta = document.getElementById('idruta'); // Modal de progreso
     const modal = document.getElementById('modalProgreso'); // Modal de progreso
     const progresoTexto = document.getElementById('progresoTexto'); // Elemento para mostrar progreso
     const tiempoTexto = document.getElementById('tiempoTexto'); // Elemento para mostrar tiempo
@@ -57,7 +109,7 @@ document.getElementById('formRuta').addEventListener('submit', function (event) 
     // Agregar evento para manejar la cancelación
     cancelarDescarga.addEventListener('click', () => {
         cancelado = true; // Actualizar la bandera
-        alert('Descarga cancelada.'); // Mostrar mensaje al usuario
+        mostrarMensaje('Descarga cancelada.'); // Mostrar mensaje al usuario
         modal.style.display = 'none'; // Ocultar el modal
     });
 
@@ -79,17 +131,19 @@ document.getElementById('formRuta').addEventListener('submit', function (event) 
                     if (done) {
                         // Cuando el proceso termina, ocultar el modal y notificar al usuario
                         modal.style.display = 'none';
-                        alert('Proceso finalizado.');
+                        mostrarMensaje('Proceso finalizado.');
                         return;
                     }
 
                     // Decodificar el fragmento recibido
                     const texto = decoder.decode(value);
+                    console.log('texto recibido:', texto);
                     try {
                         // Intentar analizar los datos como JSON
                         const data = JSON.parse(texto);
                         if (data.success) {
                             // Actualizar progreso y tiempos en el modal
+                            rruta.textContent = ruta;
                             progresoTexto.textContent = `Descargadas: ${data.progreso} de ${data.total}`;
                             tiempoTexto.textContent = `Tiempo transcurrido: ${data.tiempoTranscurrido}s, estimado restante: ${data.estimadoRestante}s`;
                         }
@@ -109,7 +163,7 @@ document.getElementById('formRuta').addEventListener('submit', function (event) 
         .catch(error => {
             // Manejar errores en la solicitud
             console.error('Error:', error);
-            alert('Hubo un error al enviar el formulario.');
+            mostrarMensaje('Hubo un error al enviar el formulario.');
             modal.style.display = 'none'; // Ocultar el modal en caso de error
         });
 });
