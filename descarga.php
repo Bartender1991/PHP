@@ -4,82 +4,94 @@ set_time_limit(0);
 
 // Verificar si los datos se enviaron por método POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Obtener los datos enviados por el cliente
-    $ruta = $_POST['ruta'] ?? ''; // Ruta de destino para las descargas
-    $contenido = $_POST['contenido'] ?? ''; // Lista de URLs a descargar
+    $ruta = $_POST['ruta'] ?? '';
+    $contenido = $_POST['contenido'] ?? '';
 
-    // Validar que se hayan proporcionado datos válidos
     if (empty($ruta) || empty($contenido)) {
         echo json_encode(['success' => false, 'message' => 'Faltan datos necesarios.']);
-        exit; // Finalizar ejecución si faltan datos
+        exit;
     }
 
-    // Procesar las URLs recibidas
     $urls = json_decode($contenido, true) ?: array_filter(array_map('trim', explode("\n", $contenido)));
 
-    // Verificar si la lista de URLs es válida y contiene al menos una URL
     if (empty($urls)) {
         echo json_encode(['success' => false, 'message' => 'No se encontraron URLs válidas.']);
-        exit; // Finalizar ejecución si no hay URLs válidas
+        exit;
     }
 
-    // Crear la carpeta de destino si no existe
     if (!file_exists($ruta)) {
-        mkdir($ruta, 0777, true); // Crear carpeta con permisos adecuados
+        mkdir($ruta, 0777, true);
     }
 
-    // Variables para el progreso
-    $total = count($urls); // Total de URLs a descargar
-    $descargadas = 0; // Contador de descargas realizadas
-    $inicio = microtime(true); // Tiempo de inicio para medir el progreso
+    $total = count($urls);
+    $descargadas = 0;
+    $inicio = microtime(true);
 
-    // Procesar cada URL
     foreach ($urls as $url) {
-        $descargadas++; // Incrementar el contador de descargas
-        descargarImagen($url, $ruta); // Descargar la imagen
+        $descargadas++;
+        descargarImagen($url, $ruta);
 
-        // Calcular el tiempo transcurrido y estimado restante
         $tiempoTranscurrido = microtime(true) - $inicio;
         $estimadoRestante = $tiempoTranscurrido / $descargadas * ($total - $descargadas);
 
-        // Enviar el progreso al cliente
         echo json_encode([
             'success' => true,
             'progreso' => $descargadas,
             'total' => $total,
-            'tiempoTranscurrido' => round($tiempoTranscurrido, 2), // Redondear a 2 decimales
-            'estimadoRestante' => round($estimadoRestante, 2) // Redondear a 2 decimales
+            'tiempoTranscurrido' => round($tiempoTranscurrido, 2),
+            'estimadoRestante' => round($estimadoRestante, 2)
         ]);
 
-        // Enviar la salida al cliente de inmediato
         flush();
         ob_flush();
 
-        // Simular un retardo (puedes eliminar esta línea en producción)
-        usleep(500000); // Pausar 0.5 segundos para pruebas
+        usleep(500000);
     }
 
-    // Enviar mensaje de finalización
     echo json_encode(['success' => true, 'message' => 'Descarga completa.']);
-    // Enviar la salida al cliente de inmediato
     flush();
     ob_flush();
-    exit; // Finalizar la ejecución
+    exit;
 }
 
 /**
  * Descargar una imagen desde una URL y guardarla en un directorio especificado.
- * 
+ * Si el archivo ya existe, se le agrega un número incremental al nombre antes de la extensión.
+ *
  * @param string $url URL de la imagen a descargar
  * @param string $directorioDestino Ruta del directorio donde se guardará la imagen
  */
 function descargarImagen($url, $directorioDestino)
 {
-    $imagen = @file_get_contents($url); // Obtener el contenido de la imagen desde la URL
-    if ($imagen === false) return; // Si falla, no hacer nada
+    $imagen = @file_get_contents($url);
+    if ($imagen === false) return;
 
-    $nombreArchivo = basename($url); // Obtener el nombre del archivo desde la URL
-    $rutaCompleta = $directorioDestino . DIRECTORY_SEPARATOR . $nombreArchivo; // Ruta completa del archivo
+    $nombreArchivo = basename($url);
+    $rutaCompleta = $directorioDestino . DIRECTORY_SEPARATOR . $nombreArchivo;
 
-    file_put_contents($rutaCompleta, $imagen); // Guardar la imagen en el directorio
+    // Si el archivo ya existe, generar un nuevo nombre con un número incremental
+    $rutaCompleta = generarNombreUnico($rutaCompleta);
+
+    file_put_contents($rutaCompleta, $imagen);
+}
+
+/**
+ * Genera un nombre de archivo único agregando un número incremental si ya existe.
+ *
+ * @param string $rutaCompleta Ruta completa del archivo (incluyendo nombre y extensión)
+ * @return string Ruta única del archivo
+ */
+function generarNombreUnico($rutaCompleta)
+{
+    $directorio = dirname($rutaCompleta);
+    $nombreArchivo = pathinfo($rutaCompleta, PATHINFO_FILENAME);
+    $extension = pathinfo($rutaCompleta, PATHINFO_EXTENSION);
+
+    $contador = 1;
+    while (file_exists($rutaCompleta)) {
+        $rutaCompleta = $directorio . DIRECTORY_SEPARATOR . $nombreArchivo . " ($contador)." . $extension;
+        $contador++;
+    }
+
+    return $rutaCompleta;
 }
